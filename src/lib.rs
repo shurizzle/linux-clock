@@ -2,6 +2,13 @@
 
 use core::{fmt, time::Duration};
 
+#[cfg(any(
+    target_os = "macos",
+    target_os = "ios",
+    target_os = "watchos",
+    target_os = "tvos"
+))]
+pub use apple_errnos::Errno;
 #[cfg(target_os = "linux")]
 pub use linux_syscalls::Errno;
 
