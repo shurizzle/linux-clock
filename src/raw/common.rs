@@ -14,43 +14,51 @@ pub enum ClockId {
     /// The system's real time (i.e. wall time) clock, expressed as the amount
     /// of time since the Epoch.  This is the same as the value returned by
     /// gettimeofday(2).
-    Realtime,
+    Realtime = 0,
+
+    /// Clock that increments monotonically, tracking the time since an
+    /// arbitrary point like [`Monotonic`]. However, this clock is
+    /// unaffected by frequency or time adjustments. It should not be compared
+    /// to other system time sources.
+    ///
+    /// [`Monotonic`]: Self::Monotonic
+    MonotonicRaw = 4,
+
+    /// Like [`MonotonicRaw`], but reads a value cached by the system at
+    /// context switch. This can be read faster, but at a loss of accuracy as
+    /// it may return values that are milliseconds old.
+    ///
+    /// [`MonotonicRaw`]: Self::MonotonicRaw
+    MonotonicRawApprox = 5,
 
     /// Clock that increments monotonically, tracking the time since an
     /// arbitrary point, and will continue to increment while the system is
     /// asleep.
-    Monotonic,
-
-    /// Clock that increments monotonically, tracking the time since an
-    /// arbitrary point like [Self::Monotonic]. However, this clock is
-    /// unaffected by frequency or time adjustments. It should not be compared
-    /// to other system time sources.
-    MonotonicRaw,
-
-    /// Like [Self::MonotonicRaw], but reads a value cached by the system at
-    /// context switch. This can be read faster, but at a loss of accuracy as
-    /// it may return values that are milliseconds old.
-    MonotonicRawApprox,
+    Monotonic = 6,
 
     /// Clock that increments monotonically, in the same manner as
-    /// [Self::MonotonicRaw], but that does not increment while the system is
+    /// [`MonotonicRaw`], but that does not increment while the system is
     /// asleep. The returned value is identical to the result of
     /// mach_absolute_time() after the appropriate mach_timebase conversion is
     /// applied.
-    UptimeRaw,
+    ///
+    /// [`MonotonicRaw`]: Self::MonotonicRaw
+    UptimeRaw = 8,
 
-    // Like [Self::UptimeRaw], but reads a value cached by the system at
+    // Like [`UptimeRaw`], but reads a value cached by the system at
     // context switch. This can be read faster, but at a loss of accuracy as
     // it may return values that are milliseconds old.
-    UptimeRawApprox,
+    ///
+    /// [`UptimeRaw`]: Self::UptimeRaw
+    UptimeRawApprox = 9,
 
     /// Clock that tracks the amount of CPU (in user- or kernel-mode) used by
     /// the calling process.
-    ProcessCputimeId,
+    ProcessCputimeId = 12,
 
     /// Clock that tracks the amount of CPU (in user- or kernel-mode) used by
     /// the calling thread.
-    ThreadCputimeId,
+    ThreadCputimeId = 16,
 }
 
 #[repr(transparent)]
