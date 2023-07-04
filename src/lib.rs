@@ -39,7 +39,7 @@ pub mod raw;
 /// Example:
 ///
 /// ```no_run
-/// use linux_clock::Instant;
+/// use unix_clock::Instant;
 /// use std::time::Duration;
 /// use std::thread::sleep;
 ///
