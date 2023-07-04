@@ -55,16 +55,14 @@ pub mod raw;
 ///
 /// [platform bugs]: Instant#monotonicity
 ///
-/// > Note: mathematical operations like [`add`] may panic if the underlying
+/// > Note: mathematical operations like `add` may panic if the underlying
 /// > structure cannot represent the new point in time.
-///
-/// [`add`]: Instant::add
 ///
 /// ## Monotonicity
 ///
 /// Guarantees are – under rare circumstances – broken by hardware, virtualization
 /// or operating system bugs. To work around these bugs and platforms not offering monotonic clocks
-/// [`duration_since`], [`elapsed`] and [`sub`] saturate to zero. In older Rust versions this
+/// [`duration_since`], [`elapsed`] and `sub` saturate to zero. In older Rust versions this
 /// lead to a panic instead. [`checked_duration_since`] can be used to detect and handle situations
 /// where monotonicity is violated, or `Instant`s are subtracted in the wrong order.
 ///
@@ -73,7 +71,6 @@ pub mod raw;
 ///
 /// [`duration_since`]: Instant::duration_since
 /// [`elapsed`]: Instant::elapsed
-/// [`sub`]: Instant::sub
 /// [`checked_duration_since`]: Instant::checked_duration_since
 ///
 #[derive(Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
@@ -129,10 +126,10 @@ pub struct Instant {
 /// }
 /// ```
 ///
-/// > Note: mathematical operations like [`add`] may panic if the underlying
+/// > Note: mathematical operations like `add` may panic if the underlying
 /// > structure cannot represent the new point in time.
 ///
-/// [`add`]: SystemTime::add
+/// [`UNIX_EPOCH`]: SystemTime::UNIX_EPOCH
 #[derive(Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct SystemTime {
     t: raw::Timespec,
