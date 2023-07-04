@@ -9,6 +9,7 @@ msrv = "1.40.0"
 [features]
 default = []
 std = ["linux-syscalls/std"]
+libc-compat = ["linux-syscalls/libc-compat"]
 
 [target.'cfg(target_os = "linux")'.dependencies]
 linux-syscalls = { version = "0.1.2", default-features = false }
