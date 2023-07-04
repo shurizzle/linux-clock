@@ -1,5 +1,5 @@
 use core::time::Duration;
-use linux_syscalls::{Errno, Sysno};
+use linux_syscalls::{syscall, Errno};
 
 const NSEC_PER_SEC: u64 = 1_000_000_000;
 const I64_MAX: u64 = 9_223_372_036_854_775_807;
@@ -11,8 +11,13 @@ const I64_MAX: u64 = 9_223_372_036_854_775_807;
     target_arch = "s390x",
     target_arch = "sparc64"
 ))]
-#[allow(non_upper_case_globals)]
-const SYS_clock_gettime: Sysno = Sysno::clock_gettime;
+mod sysnos {
+    #![allow(non_upper_case_globals)]
+    use linux_syscalls::Sysno;
+
+    pub const SYS_clock_gettime: Sysno = Sysno::clock_gettime;
+    pub const SYS_clock_settime: Sysno = Sysno::clock_settime;
+}
 #[cfg(not(any(
     target_arch = "x86_64",
     target_arch = "powerpc64",
@@ -20,8 +25,15 @@ const SYS_clock_gettime: Sysno = Sysno::clock_gettime;
     target_arch = "s390x",
     target_arch = "sparc64"
 )))]
-#[allow(non_upper_case_globals)]
-const SYS_clock_gettime: Sysno = Sysno::clock_gettime64;
+mod sysnos {
+    #![allow(non_upper_case_globals)]
+    use linux_syscalls::Sysno;
+
+    pub const SYS_clock_gettime: Sysno = Sysno::clock_gettime64;
+    pub const SYS_clock_settime: Sysno = Sysno::clock_settime64;
+}
+
+use sysnos::*;
 
 #[repr(i32)]
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
@@ -135,7 +147,7 @@ pub struct Timespec {
     target_arch = "x86_64",
     target_arch = "loongarch64"
 ))]
-mod imp {
+mod get_impl {
     use core::{
         mem::MaybeUninit,
         sync::atomic::{AtomicPtr, Ordering},
@@ -193,13 +205,13 @@ mod imp {
     pub fn clock_gettime(clockid: super::ClockId) -> Result<super::Timespec, Errno> {
         unsafe {
             let mut buf = MaybeUninit::<super::Timespec>::uninit();
+            (*buf.as_mut_ptr()).__padding = 0;
             if let Some(inner) = clock_gettime_vsyscall() {
                 Errno::from_ret(inner(clockid as usize, buf.as_mut_ptr() as usize))
-                    .map(|_| buf.assume_init())
             } else {
                 syscall!(super::SYS_clock_gettime, clockid, buf.as_mut_ptr())
-                    .map(|_| buf.assume_init())
             }
+            .map(|_| buf.assume_init())
         }
     }
 }
@@ -218,11 +230,12 @@ mod imp {
     target_arch = "x86_64",
     target_arch = "loongarch64"
 )))]
-mod imp {
+mod get_impl {
     #[inline(always)]
     pub fn clock_gettime(clockid: super::ClockId) -> Result<super::Timespec, Errno> {
         unsafe {
             let mut buf = MaybeUninit::<super::Timespec>::uninit();
+            (*buf.as_mut_ptr()).__padding = 0;
             syscall!(super::SYS_clock_gettime, clockid, buf.as_mut_ptr()).map(|_| buf.assume_init())
         }
     }
@@ -239,8 +252,19 @@ impl Timespec {
     }
 
     #[inline]
+    pub const fn zero() -> Self {
+        Self::new(0, 0)
+    }
+
+    #[inline]
     pub fn now(clockid: ClockId) -> Result<Self, Errno> {
-        imp::clock_gettime(clockid)
+        get_impl::clock_gettime(clockid)
+    }
+
+    #[inline]
+    pub fn set_clock(&self) -> Result<(), Errno> {
+        unsafe { syscall!([ro] SYS_clock_settime, ClockId::Realtime, self as *const Self) }
+            .map(|_| ())
     }
 
     pub fn sub_timespec(&self, other: &Timespec) -> Result<Duration, Duration> {
@@ -328,6 +352,13 @@ impl Timespec {
             secs = secs.checked_sub(1)?;
         }
         Some(Timespec::new(secs, nsec as u32))
+    }
+}
+
+impl Default for Timespec {
+    #[inline]
+    fn default() -> Self {
+        Self::zero()
     }
 }
 
