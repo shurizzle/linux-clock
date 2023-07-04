@@ -8,7 +8,7 @@ use crate::Errno;
     target_os = "watchos",
     target_os = "tvos"
 ))]
-#[repr(i32)]
+#[repr(u32)]
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub enum ClockId {
     /// The system's real time (i.e. wall time) clock, expressed as the amount
@@ -77,7 +77,7 @@ impl Timespec {
     #[inline(always)]
     pub fn now(clockid: ClockId) -> Result<Self, Errno> {
         let mut buf = MaybeUninit::<libc::timespec>::uninit();
-        if unsafe { libc::clock_gettime(clockid as i32 as _, buf.as_mut_ptr()) } == -1 {
+        if unsafe { libc::clock_gettime(clockid as _, buf.as_mut_ptr()) } == -1 {
             Err(Errno::last_os_error())
         } else {
             Ok(Self(unsafe { buf.assume_init() }))
@@ -106,8 +106,7 @@ impl Timespec {
 
     #[inline]
     pub fn set_clock(&self) -> Result<(), Errno> {
-        if unsafe { libc::clock_settime(ClockId::Realtime as i32 as _, &self.0 as *const _) } == -1
-        {
+        if unsafe { libc::clock_settime(ClockId::Realtime as _, &self.0 as *const _) } == -1 {
             Err(Errno::last_os_error())
         } else {
             Ok(())
