@@ -2,6 +2,7 @@
 
 use core::{fmt, time::Duration};
 
+#[cfg(target_os = "linux")]
 pub use linux_syscalls::Errno;
 
 pub mod raw;
