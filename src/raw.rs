@@ -155,6 +155,8 @@ mod get_impl {
 
     use linux_syscalls::{syscall, Errno};
 
+    const UNINIT: *mut core::ffi::c_void = core::ptr::null_mut();
+    const INIT_NULL: *mut core::ffi::c_void = 1 as _;
     static mut CLOCK_GETTIME_VSYSCALL: AtomicPtr<core::ffi::c_void> =
         AtomicPtr::new(core::ptr::null_mut());
 
@@ -183,20 +185,23 @@ mod get_impl {
     }
 
     #[inline(always)]
-    fn clock_gettime_vsyscall() -> Option<extern "C" fn(usize, usize) -> usize> {
+    fn clock_gettime_vsyscall(
+    ) -> Option<extern "C" fn(super::ClockId, *mut super::Timespec) -> usize> {
         unsafe {
-            let mut ptr = CLOCK_GETTIME_VSYSCALL.load(Ordering::Relaxed);
-            if ptr.is_null() {
-                ptr = vdso_clock_gettime(linux_syscalls::env::vdso()) as _;
-                CLOCK_GETTIME_VSYSCALL.store(((ptr as usize) | 1) as _, Ordering::Relaxed);
-            } else {
-                ptr = ((ptr as usize) & !1) as _;
-            }
-
-            if ptr.is_null() {
-                None
-            } else {
-                Some(core::mem::transmute(ptr))
+            match CLOCK_GETTIME_VSYSCALL.load(Ordering::Relaxed) {
+                UNINIT => {
+                    let ptr =
+                        vdso_clock_gettime(linux_syscalls::env::vdso()) as *mut core::ffi::c_void;
+                    if ptr.is_null() {
+                        CLOCK_GETTIME_VSYSCALL.store(INIT_NULL, Ordering::Relaxed);
+                        None
+                    } else {
+                        CLOCK_GETTIME_VSYSCALL.store(ptr, Ordering::Relaxed);
+                        Some(core::mem::transmute(ptr))
+                    }
+                }
+                INIT_NULL => None,
+                ptr => Some(core::mem::transmute(ptr)),
             }
         }
     }
@@ -207,7 +212,7 @@ mod get_impl {
             let mut buf = MaybeUninit::<super::Timespec>::uninit();
             (*buf.as_mut_ptr()).__padding = 0;
             if let Some(inner) = clock_gettime_vsyscall() {
-                Errno::from_ret(inner(clockid as usize, buf.as_mut_ptr() as usize))
+                Errno::from_ret(inner(clockid, buf.as_mut_ptr()))
             } else {
                 syscall!(super::SYS_clock_gettime, clockid, buf.as_mut_ptr())
             }
