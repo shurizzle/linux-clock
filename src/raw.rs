@@ -1,5 +1,5 @@
 use cfg_if::cfg_if;
-use core::time::Duration;
+use core::{fmt, time::Duration};
 use linux_syscalls::{syscall, Errno, Sysno};
 
 const NSEC_PER_SEC: u64 = 1_000_000_000;
@@ -113,12 +113,12 @@ pub enum ClockId {
 }
 
 #[repr(C)]
-#[derive(Debug, Clone, Copy)]
+#[derive(Clone, Copy)]
 pub struct Timespec {
-    pub tv_sec: i64,
+    tv_sec: i64,
     #[cfg(target_endian = "big")]
     __padding: i32,
-    pub tv_nsec: u32,
+    tv_nsec: u32,
     #[cfg(target_endian = "little")]
     __padding: i32,
 }
@@ -215,23 +215,38 @@ cfg_if! {
 }
 
 impl Timespec {
-    #[inline]
-    pub const fn new(tv_sec: i64, tv_nsec: u32) -> Self {
+    #[inline(always)]
+    pub const fn new(secs: i64, nsecs: u32) -> Self {
         Self {
-            tv_sec,
-            tv_nsec,
+            tv_sec: secs,
+            tv_nsec: nsecs,
             __padding: 0,
         }
     }
 
-    #[inline]
-    pub const fn zero() -> Self {
-        Self::new(0, 0)
-    }
-
-    #[inline]
+    #[inline(always)]
     pub fn now(clockid: ClockId) -> Result<Self, Errno> {
         get_impl::clock_gettime(clockid)
+    }
+
+    #[inline(always)]
+    pub const fn secs(&self) -> i64 {
+        self.tv_sec
+    }
+
+    #[inline(always)]
+    pub fn set_secs(&mut self, secs: i64) {
+        self.tv_sec = secs;
+    }
+
+    #[inline(always)]
+    pub const fn nsecs(&self) -> u32 {
+        self.tv_nsec
+    }
+
+    #[inline(always)]
+    pub fn set_nsecs(&mut self, nsecs: u32) {
+        self.tv_nsec = nsecs;
     }
 
     #[inline]
@@ -239,35 +254,72 @@ impl Timespec {
         unsafe { syscall!([ro] SYS_clock_settime, ClockId::Realtime, self as *const Self) }
             .map(|_| ())
     }
+}
+
+impl Timespec {
+    #[inline(always)]
+    pub const fn zero() -> Self {
+        Self::new(0, 0)
+    }
+
+    #[inline(always)]
+    pub const fn seconds(&self) -> i64 {
+        self.secs()
+    }
+
+    #[inline(always)]
+    pub fn set_seconds(&mut self, secs: i64) {
+        self.set_secs(secs)
+    }
+
+    #[inline(always)]
+    pub const fn nanosecs(&self) -> u32 {
+        self.nsecs()
+    }
+
+    #[inline(always)]
+    pub const fn nanoseconds(&self) -> u32 {
+        self.nsecs()
+    }
+
+    #[inline(always)]
+    pub fn set_nanosecs(&mut self, nsecs: u32) {
+        self.set_nsecs(nsecs)
+    }
+
+    #[inline(always)]
+    pub fn set_nanoseconds(&mut self, nsecs: u32) {
+        self.set_nsecs(nsecs)
+    }
 
     pub fn sub_timespec(&self, other: &Timespec) -> Result<Duration, Duration> {
         if self >= other {
             // NOTE(eddyb) two aspects of this `if`-`else` are required for LLVM
             // to optimize it into a branchless form (see also #75545):
             //
-            // 1. `self.tv_sec - other.tv_sec` shows up as a common expression
+            // 1. `self.secs() - other.secs()` shows up as a common expression
             //    in both branches, i.e. the `else` must have its `- 1`
             //    subtraction after the common one, not interleaved with it
-            //    (it used to be `self.tv_sec - 1 - other.tv_sec`)
+            //    (it used to be `self.secs() - 1 - other.secs()`)
             //
             // 2. the `Duration::new` call (or any other additional complexity)
             //    is outside of the `if`-`else`, not duplicated in both branches
             //
             // Ideally this code could be rearranged such that it more
             // directly expresses the lower-cost behavior we want from it.
-            let (secs, nsec) = if self.tv_nsec >= other.tv_nsec {
+            let (secs, nsecs) = if self.nsecs() >= other.nsecs() {
                 (
-                    (self.tv_sec - other.tv_sec) as u64,
-                    self.tv_nsec - other.tv_nsec,
+                    (self.secs() - other.secs()) as u64,
+                    self.nsecs() - other.nsecs(),
                 )
             } else {
                 (
-                    (self.tv_sec - other.tv_sec - 1) as u64,
-                    self.tv_nsec + (NSEC_PER_SEC as u32) - other.tv_nsec,
+                    (self.secs() - other.secs() - 1) as u64,
+                    self.nsecs() + (NSEC_PER_SEC as u32) - other.nsecs(),
                 )
             };
 
-            Ok(Duration::new(secs, nsec))
+            Ok(Duration::new(secs, nsecs))
         } else {
             match other.sub_timespec(self) {
                 Ok(d) => Err(d),
@@ -290,16 +342,16 @@ impl Timespec {
             a.checked_add(b)
         }
 
-        let mut secs = checked_add_unsigned(self.tv_sec, other.as_secs())?;
+        let mut secs = checked_add_unsigned(self.secs(), other.as_secs())?;
 
         // Nano calculations can't overflow because nanos are <1B which fit
         // in a u32.
-        let mut nsec = other.subsec_nanos() + self.tv_nsec;
-        if nsec >= NSEC_PER_SEC as u32 {
-            nsec -= NSEC_PER_SEC as u32;
+        let mut nsecs = other.subsec_nanos() + self.nsecs();
+        if nsecs >= NSEC_PER_SEC as u32 {
+            nsecs -= NSEC_PER_SEC as u32;
             secs = secs.checked_add(1)?;
         }
-        Some(Timespec::new(secs, nsec))
+        Some(Timespec::new(secs, nsecs))
     }
 
     pub fn checked_sub_duration(&self, other: &Duration) -> Option<Timespec> {
@@ -316,15 +368,15 @@ impl Timespec {
             a.checked_sub(b)
         }
 
-        let mut secs = checked_sub_unsigned(self.tv_sec, other.as_secs())?;
+        let mut secs = checked_sub_unsigned(self.secs(), other.as_secs())?;
 
         // Similar to above, nanos can't overflow.
-        let mut nsec = self.tv_nsec as i32 - other.subsec_nanos() as i32;
-        if nsec < 0 {
-            nsec += NSEC_PER_SEC as i32;
+        let mut nsecs = self.nsecs() as i32 - other.subsec_nanos() as i32;
+        if nsecs < 0 {
+            nsecs += NSEC_PER_SEC as i32;
             secs = secs.checked_sub(1)?;
         }
-        Some(Timespec::new(secs, nsec as u32))
+        Some(Timespec::new(secs, nsecs as u32))
     }
 }
 
@@ -335,9 +387,18 @@ impl Default for Timespec {
     }
 }
 
+impl fmt::Debug for Timespec {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.debug_struct("Timespec")
+            .field("secs", &self.secs())
+            .field("nsecs", &self.nsecs())
+            .finish()
+    }
+}
+
 impl PartialEq for Timespec {
     fn eq(&self, other: &Self) -> bool {
-        self.tv_sec == other.tv_sec && self.tv_nsec == other.tv_nsec
+        self.secs() == other.secs() && self.nsecs() == other.nsecs()
     }
 }
 
@@ -345,27 +406,27 @@ impl Eq for Timespec {}
 
 impl PartialOrd for Timespec {
     fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
-        match self.tv_sec.partial_cmp(&other.tv_sec) {
+        match self.secs().partial_cmp(&other.secs()) {
             Some(core::cmp::Ordering::Equal) => (),
             ord => return ord,
         }
-        self.tv_nsec.partial_cmp(&other.tv_nsec)
+        self.nsecs().partial_cmp(&other.nsecs())
     }
 }
 
 impl Ord for Timespec {
     fn cmp(&self, other: &Self) -> std::cmp::Ordering {
-        match self.tv_sec.cmp(&other.tv_sec) {
+        match self.secs().cmp(&other.secs()) {
             core::cmp::Ordering::Equal => (),
             ord => return ord,
         }
-        self.tv_nsec.cmp(&other.tv_nsec)
+        self.nsecs().cmp(&other.nsecs())
     }
 }
 
 impl core::hash::Hash for Timespec {
     fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
-        self.tv_sec.hash(state);
-        self.tv_nsec.hash(state);
+        self.secs().hash(state);
+        self.nsecs().hash(state);
     }
 }

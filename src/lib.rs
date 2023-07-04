@@ -276,8 +276,8 @@ impl Instant {
 impl fmt::Debug for Instant {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.debug_struct("Instant")
-            .field("tv_sec", &self.t.tv_sec)
-            .field("tv_nsec", &self.t.tv_nsec)
+            .field("secs", &self.t.secs())
+            .field("nsecs", &self.t.nsecs())
             .finish()
     }
 }
@@ -501,8 +501,8 @@ impl core::ops::SubAssign<Duration> for SystemTime {
 impl fmt::Debug for SystemTime {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.debug_struct("SystemTime")
-            .field("tv_sec", &self.t.tv_sec)
-            .field("tv_nsec", &self.t.tv_nsec)
+            .field("secs", &self.t.secs())
+            .field("nsecs", &self.t.nsecs())
             .finish()
     }
 }
