@@ -115,7 +115,7 @@ pub struct Instant {
 ///        }
 ///        Err(e) => {
 ///            // an error occurred!
-///            println!("Error: {e:?}");
+///            println!("Error: {:?}", e);
 ///        }
 ///    }
 /// }
@@ -404,7 +404,7 @@ impl SystemTime {
     /// let new_sys_time = SystemTime::now();
     /// let difference = new_sys_time.duration_since(sys_time)
     ///     .expect("Clock may have gone backwards");
-    /// println!("{difference:?}");
+    /// println!("{:?}", difference);
     /// ```
     pub fn duration_since(&self, earlier: SystemTime) -> Result<Duration, SystemTimeError> {
         self.t.sub_timespec(&earlier.t).map_err(SystemTimeError)
