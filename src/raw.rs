@@ -195,7 +195,6 @@ cfg_if! {
                 }
             }
 
-            #[inline(always)]
             pub fn clock_gettime(clockid: super::ClockId) -> Result<super::Timespec, Errno> {
                 unsafe {
                     let mut buf = MaybeUninit::<super::Timespec>::uninit();
