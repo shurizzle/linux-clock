@@ -12,3 +12,4 @@ std = ["linux-syscalls/std"]
 
 [target.'cfg(target_os = "linux")'.dependencies]
 linux-syscalls = { version = "0.1.2", default-features = false }
+cfg-if = "1.0.0"

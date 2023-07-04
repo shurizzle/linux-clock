@@ -1,36 +1,34 @@
+use cfg_if::cfg_if;
 use core::time::Duration;
 use linux_syscalls::{syscall, Errno};
 
 const NSEC_PER_SEC: u64 = 1_000_000_000;
 const I64_MAX: u64 = 9_223_372_036_854_775_807;
 
-#[cfg(any(
-    target_arch = "x86_64",
-    target_arch = "powerpc64",
-    target_arch = "mips64",
-    target_arch = "s390x",
-    target_arch = "sparc64"
-))]
-mod sysnos {
-    #![allow(non_upper_case_globals)]
-    use linux_syscalls::Sysno;
+cfg_if! {
+    if #[cfg(any(
+        target_arch = "x86_64",
+        target_arch = "powerpc64",
+        target_arch = "mips64",
+        target_arch = "s390x",
+        target_arch = "sparc64"
+    ))] {
+        mod sysnos {
+            #![allow(non_upper_case_globals)]
+            use linux_syscalls::Sysno;
 
-    pub const SYS_clock_gettime: Sysno = Sysno::clock_gettime;
-    pub const SYS_clock_settime: Sysno = Sysno::clock_settime;
-}
-#[cfg(not(any(
-    target_arch = "x86_64",
-    target_arch = "powerpc64",
-    target_arch = "mips64",
-    target_arch = "s390x",
-    target_arch = "sparc64"
-)))]
-mod sysnos {
-    #![allow(non_upper_case_globals)]
-    use linux_syscalls::Sysno;
+            pub const SYS_clock_gettime: Sysno = Sysno::clock_gettime;
+            pub const SYS_clock_settime: Sysno = Sysno::clock_settime;
+        }
+    } else {
+        mod sysnos {
+            #![allow(non_upper_case_globals)]
+            use linux_syscalls::Sysno;
 
-    pub const SYS_clock_gettime: Sysno = Sysno::clock_gettime64;
-    pub const SYS_clock_settime: Sysno = Sysno::clock_settime64;
+            pub const SYS_clock_gettime: Sysno = Sysno::clock_gettime64;
+            pub const SYS_clock_settime: Sysno = Sysno::clock_settime64;
+        }
+    }
 }
 
 use sysnos::*;
@@ -133,38 +131,13 @@ pub struct Timespec {
     __padding: i32,
 }
 
-#[cfg(any(
-    target_arch = "arm",
-    target_arch = "aarch64",
-    target_arch = "mips",
-    target_arch = "mips64",
-    target_arch = "powerpc",
-    target_arch = "powerpc64",
-    target_arch = "riscv32",
-    target_arch = "riscv64",
-    target_arch = "s390x",
-    target_arch = "x86",
-    target_arch = "x86_64",
-    target_arch = "loongarch64"
-))]
-mod get_impl {
-    use core::{
-        mem::MaybeUninit,
-        sync::atomic::{AtomicPtr, Ordering},
-    };
-
-    use linux_syscalls::{syscall, Errno};
-
-    const UNINIT: *mut core::ffi::c_void = core::ptr::null_mut();
-    const INIT_NULL: *mut core::ffi::c_void = 1 as _;
-    static mut CLOCK_GETTIME_VSYSCALL: AtomicPtr<core::ffi::c_void> =
-        AtomicPtr::new(core::ptr::null_mut());
-
-    #[cfg(any(
+cfg_if! {
+    if #[cfg(any(
         target_arch = "arm",
         target_arch = "aarch64",
         target_arch = "mips",
         target_arch = "mips64",
+        target_arch = "powerpc",
         target_arch = "powerpc64",
         target_arch = "riscv32",
         target_arch = "riscv64",
@@ -172,76 +145,80 @@ mod get_impl {
         target_arch = "x86",
         target_arch = "x86_64",
         target_arch = "loongarch64"
-    ))]
-    #[inline(always)]
-    fn vdso_clock_gettime(vdso: &linux_syscalls::env::Vdso) -> *const core::ffi::c_void {
-        vdso.clock_gettime()
-    }
+    ))] {
+        mod get_impl {
+            use core::{
+                mem::MaybeUninit,
+                sync::atomic::{AtomicPtr, Ordering},
+            };
 
-    #[cfg(any(target_arch = "powerpc"))]
-    #[inline(always)]
-    fn vdso_clock_gettime(vdso: &linux_syscalls::env::Vdso) -> *const core::ffi::c_void {
-        vdso.clock_gettime64()
-    }
+            use linux_syscalls::{syscall, Errno};
 
-    #[inline(always)]
-    fn clock_gettime_vsyscall(
-    ) -> Option<extern "C" fn(super::ClockId, *mut super::Timespec) -> usize> {
-        unsafe {
-            match CLOCK_GETTIME_VSYSCALL.load(Ordering::Relaxed) {
-                UNINIT => {
-                    let ptr =
-                        vdso_clock_gettime(linux_syscalls::env::vdso()) as *mut core::ffi::c_void;
-                    if ptr.is_null() {
-                        CLOCK_GETTIME_VSYSCALL.store(INIT_NULL, Ordering::Relaxed);
-                        None
-                    } else {
-                        CLOCK_GETTIME_VSYSCALL.store(ptr, Ordering::Relaxed);
-                        Some(core::mem::transmute(ptr))
+            const UNINIT: *mut core::ffi::c_void = core::ptr::null_mut();
+            const INIT_NULL: *mut core::ffi::c_void = 1 as _;
+            static mut CLOCK_GETTIME_VSYSCALL: AtomicPtr<core::ffi::c_void> =
+                AtomicPtr::new(core::ptr::null_mut());
+
+            cfg_if::cfg_if! {
+                if #[cfg(target_arch = "powerpc")] {
+                    #[inline(always)]
+                    fn vdso_clock_gettime(vdso: &linux_syscalls::env::Vdso) -> *const core::ffi::c_void {
+                        vdso.clock_gettime64()
+                    }
+                } else {
+                    #[inline(always)]
+                    fn vdso_clock_gettime(vdso: &linux_syscalls::env::Vdso) -> *const core::ffi::c_void {
+                        vdso.clock_gettime()
                     }
                 }
-                INIT_NULL => None,
-                ptr => Some(core::mem::transmute(ptr)),
+            }
+
+            #[inline(always)]
+            fn clock_gettime_vsyscall(
+            ) -> Option<extern "C" fn(super::ClockId, *mut super::Timespec) -> usize> {
+                unsafe {
+                    match CLOCK_GETTIME_VSYSCALL.load(Ordering::Relaxed) {
+                        UNINIT => {
+                            let ptr =
+                                vdso_clock_gettime(linux_syscalls::env::vdso()) as *mut core::ffi::c_void;
+                            if ptr.is_null() {
+                                CLOCK_GETTIME_VSYSCALL.store(INIT_NULL, Ordering::Relaxed);
+                                None
+                            } else {
+                                CLOCK_GETTIME_VSYSCALL.store(ptr, Ordering::Relaxed);
+                                Some(core::mem::transmute(ptr))
+                            }
+                        }
+                        INIT_NULL => None,
+                        ptr => Some(core::mem::transmute(ptr)),
+                    }
+                }
+            }
+
+            #[inline(always)]
+            pub fn clock_gettime(clockid: super::ClockId) -> Result<super::Timespec, Errno> {
+                unsafe {
+                    let mut buf = MaybeUninit::<super::Timespec>::uninit();
+                    (*buf.as_mut_ptr()).__padding = 0;
+                    if let Some(inner) = clock_gettime_vsyscall() {
+                        Errno::from_ret(inner(clockid, buf.as_mut_ptr()))
+                    } else {
+                        syscall!(super::SYS_clock_gettime, clockid, buf.as_mut_ptr())
+                    }
+                    .map(|_| buf.assume_init())
+                }
             }
         }
-    }
-
-    #[inline(always)]
-    pub fn clock_gettime(clockid: super::ClockId) -> Result<super::Timespec, Errno> {
-        unsafe {
-            let mut buf = MaybeUninit::<super::Timespec>::uninit();
-            (*buf.as_mut_ptr()).__padding = 0;
-            if let Some(inner) = clock_gettime_vsyscall() {
-                Errno::from_ret(inner(clockid, buf.as_mut_ptr()))
-            } else {
-                syscall!(super::SYS_clock_gettime, clockid, buf.as_mut_ptr())
+    } else {
+        mod get_impl {
+            #[inline(always)]
+            pub fn clock_gettime(clockid: super::ClockId) -> Result<super::Timespec, Errno> {
+                unsafe {
+                    let mut buf = MaybeUninit::<super::Timespec>::uninit();
+                    (*buf.as_mut_ptr()).__padding = 0;
+                    syscall!(super::SYS_clock_gettime, clockid, buf.as_mut_ptr()).map(|_| buf.assume_init())
+                }
             }
-            .map(|_| buf.assume_init())
-        }
-    }
-}
-
-#[cfg(not(any(
-    target_arch = "arm",
-    target_arch = "aarch64",
-    target_arch = "mips",
-    target_arch = "mips64",
-    target_arch = "powerpc",
-    target_arch = "powerpc64",
-    target_arch = "riscv32",
-    target_arch = "riscv64",
-    target_arch = "s390x",
-    target_arch = "x86",
-    target_arch = "x86_64",
-    target_arch = "loongarch64"
-)))]
-mod get_impl {
-    #[inline(always)]
-    pub fn clock_gettime(clockid: super::ClockId) -> Result<super::Timespec, Errno> {
-        unsafe {
-            let mut buf = MaybeUninit::<super::Timespec>::uninit();
-            (*buf.as_mut_ptr()).__padding = 0;
-            syscall!(super::SYS_clock_gettime, clockid, buf.as_mut_ptr()).map(|_| buf.assume_init())
         }
     }
 }
