@@ -1,5 +1,5 @@
 [package]
-name = "linux-clock"
+name = "unix-clock"
 version = "0.1.0"
 edition = "2018"
 
@@ -13,3 +13,6 @@ std = ["linux-syscalls/std"]
 [target.'cfg(target_os = "linux")'.dependencies]
 linux-syscalls = { version = "0.1.2", default-features = false }
 cfg-if = "1.0.0"
+
+[target.'cfg(all(unix, not(target_os = "linux")))'.dependencies]
+libc = "0.2.147"
