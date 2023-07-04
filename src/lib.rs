@@ -159,23 +159,8 @@ pub struct SystemTimeError(Duration);
 impl Instant {
     #[inline]
     pub fn now() -> Self {
-        #[cfg(any(
-            target_os = "macos",
-            target_os = "ios",
-            target_os = "watchos",
-            target_os = "tvos"
-        ))]
-        let clockid = raw::ClockId::UptimeRaw;
-        #[cfg(not(any(
-            target_os = "macos",
-            target_os = "ios",
-            target_os = "watchos",
-            target_os = "tvos"
-        )))]
-        let clockid = raw::ClockId::Monotonic;
-
         Instant {
-            t: raw::Timespec::now(clockid).unwrap(),
+            t: raw::Timespec::now(raw::INSTANT_CLOCKID).unwrap(),
         }
     }
 
@@ -398,7 +383,7 @@ impl SystemTime {
     #[inline]
     pub fn now() -> Self {
         Self {
-            t: raw::Timespec::now(raw::ClockId::Realtime).unwrap(),
+            t: raw::Timespec::now(raw::SYSTEM_TIME_CLOCKID).unwrap(),
         }
     }
 

@@ -6,6 +6,23 @@ mod inner;
 
 pub use inner::*;
 
+#[cfg(any(
+    target_os = "macos",
+    target_os = "ios",
+    target_os = "watchos",
+    target_os = "tvos"
+))]
+pub(crate) const INSTANT_CLOCKID: ClockId = ClockId::UptimeRaw;
+#[cfg(not(any(
+    target_os = "macos",
+    target_os = "ios",
+    target_os = "watchos",
+    target_os = "tvos"
+)))]
+pub(crate) const INSTANT_CLOCKID: ClockId = ClockId::Monotonic;
+
+pub(crate) const SYSTEM_TIME_CLOCKID: ClockId = ClockId::Realtime;
+
 const NSEC_PER_SEC: u64 = 1_000_000_000;
 const I64_MAX: u64 = 9_223_372_036_854_775_807;
 
