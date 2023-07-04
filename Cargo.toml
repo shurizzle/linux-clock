@@ -1,0 +1,14 @@
+[package]
+name = "linux-clock"
+version = "0.1.0"
+edition = "2018"
+
+[package.metadata]
+msrv = "1.40.0"
+
+[features]
+default = []
+std = ["linux-syscalls/std"]
+
+[target.'cfg(target_os = "linux")'.dependencies]
+linux-syscalls = { version = "0.1.2", default-features = false }
