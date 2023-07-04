@@ -44,27 +44,6 @@ pub enum ClockId {
     /// by adjtime(3) and NTP.
     Realtime = 0,
 
-    /// (since Linux 3.0; Linux-specific)
-    /// Like CLOCK_REALTIME, but not settable.  See timer_create(2) for
-    /// further details.
-    RealtimeAlarm = 8,
-
-    /// (since Linux 2.6.32; Linux-specific)
-    /// A faster but less precise version of CLOCK_REALTIME.  This clock
-    /// is not settable.  Use when you need very fast, but not fine-
-    /// grained timestamps.  Requires per-architecture support, and
-    /// probably also architecture support for this flag in the vdso(7).
-    RealtimeCoarse = 5,
-
-    /// (since Linux 3.10; Linux-specific)
-    /// A nonsettable system-wide clock derived from wall-clock time but
-    /// ignoring leap seconds.  This clock does not experience
-    /// discontinuities and backwards jumps caused by NTP inserting leap
-    /// seconds as CLOCK_REALTIME does.
-    ///
-    /// The acronym TAI refers to International Atomic Time.
-    InternationalAtomicTime = 11,
-
     /// A nonsettable system-wide clock that represents monotonic time
     /// since—as described by POSIX—"some unspecified point in the
     /// past".  On Linux, that point corresponds to the number of
@@ -81,12 +60,16 @@ pub enum ClockId {
     /// increased) time values.
     Monotonic = 1,
 
-    /// (since Linux 2.6.32; Linux-specific)
-    /// A faster but less precise version of CLOCK_MONOTONIC.  Use when
-    /// you need very fast, but not fine-grained timestamps.  Requires
-    /// per-architecture support, and probably also architecture support
-    /// for this flag in the vdso(7).
-    MonotonicCoarse = 6,
+    /// (since Linux 2.6.12)
+    /// This is a clock that measures CPU time consumed by this process
+    /// (i.e., CPU time consumed by all threads in the process).  On
+    /// Linux, this clock is not settable.
+    ProcessCputimeId = 2,
+
+    /// (since Linux 2.6.12)
+    /// This is a clock that measures CPU time consumed by this thread.
+    /// On Linux, this clock is not settable.
+    ThreadCputimeId = 3,
 
     /// (since Linux 2.6.28; Linux-specific)
     /// Similar to CLOCK_MONOTONIC, but provides access to a raw
@@ -94,6 +77,20 @@ pub enum ClockId {
     /// the incremental adjustments performed by adjtime(3).  This clock
     /// does not count time that the system is suspended.
     MonotonicRaw = 4,
+
+    /// (since Linux 2.6.32; Linux-specific)
+    /// A faster but less precise version of CLOCK_REALTIME.  This clock
+    /// is not settable.  Use when you need very fast, but not fine-
+    /// grained timestamps.  Requires per-architecture support, and
+    /// probably also architecture support for this flag in the vdso(7).
+    RealtimeCoarse = 5,
+
+    /// (since Linux 2.6.32; Linux-specific)
+    /// A faster but less precise version of CLOCK_MONOTONIC.  Use when
+    /// you need very fast, but not fine-grained timestamps.  Requires
+    /// per-architecture support, and probably also architecture support
+    /// for this flag in the vdso(7).
+    MonotonicCoarse = 6,
 
     /// (since Linux 2.6.39; Linux-specific)
     /// A nonsettable system-wide clock that is identical to
@@ -105,19 +102,22 @@ pub enum ClockId {
     Boottime = 7,
 
     /// (since Linux 3.0; Linux-specific)
+    /// Like CLOCK_REALTIME, but not settable.  See timer_create(2) for
+    /// further details.
+    RealtimeAlarm = 8,
+
+    /// (since Linux 3.0; Linux-specific)
     /// Like CLOCK_BOOTTIME.  See timer_create(2) for further details.
     BoottimeAlarm = 9,
 
-    /// (since Linux 2.6.12)
-    /// This is a clock that measures CPU time consumed by this process
-    /// (i.e., CPU time consumed by all threads in the process).  On
-    /// Linux, this clock is not settable.
-    ProcessCputimeId = 2,
-
-    /// (since Linux 2.6.12)
-    /// This is a clock that measures CPU time consumed by this thread.
-    /// On Linux, this clock is not settable.
-    ThreadCputimeId = 3,
+    /// (since Linux 3.10; Linux-specific)
+    /// A nonsettable system-wide clock derived from wall-clock time but
+    /// ignoring leap seconds.  This clock does not experience
+    /// discontinuities and backwards jumps caused by NTP inserting leap
+    /// seconds as CLOCK_REALTIME does.
+    ///
+    /// The acronym TAI refers to International Atomic Time.
+    InternationalAtomicTime = 11,
 }
 
 #[repr(C)]
