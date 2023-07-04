@@ -1,6 +1,6 @@
 use cfg_if::cfg_if;
 use core::time::Duration;
-use linux_syscalls::{syscall, Errno};
+use linux_syscalls::{syscall, Errno, Sysno};
 
 const NSEC_PER_SEC: u64 = 1_000_000_000;
 const I64_MAX: u64 = 9_223_372_036_854_775_807;
@@ -13,25 +13,17 @@ cfg_if! {
         target_arch = "s390x",
         target_arch = "sparc64"
     ))] {
-        mod sysnos {
-            #![allow(non_upper_case_globals)]
-            use linux_syscalls::Sysno;
-
-            pub const SYS_clock_gettime: Sysno = Sysno::clock_gettime;
-            pub const SYS_clock_settime: Sysno = Sysno::clock_settime;
-        }
+        #[allow(non_upper_case_globals)]
+        const SYS_clock_gettime: Sysno = Sysno::clock_gettime;
+        #[allow(non_upper_case_globals)]
+        const SYS_clock_settime: Sysno = Sysno::clock_settime;
     } else {
-        mod sysnos {
-            #![allow(non_upper_case_globals)]
-            use linux_syscalls::Sysno;
-
-            pub const SYS_clock_gettime: Sysno = Sysno::clock_gettime64;
-            pub const SYS_clock_settime: Sysno = Sysno::clock_settime64;
-        }
+        #[allow(non_upper_case_globals)]
+        const SYS_clock_gettime: Sysno = Sysno::clock_gettime64;
+        #[allow(non_upper_case_globals)]
+        const SYS_clock_settime: Sysno = Sysno::clock_settime64;
     }
 }
-
-use sysnos::*;
 
 #[repr(i32)]
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
