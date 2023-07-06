@@ -339,6 +339,13 @@ impl core::ops::Sub<Instant> for Instant {
     }
 }
 
+impl From<Instant> for raw::Timespec {
+    #[inline]
+    fn from(value: Instant) -> Self {
+        value.t
+    }
+}
+
 impl SystemTime {
     /// An anchor in time which can be used to create new `SystemTime` instances or
     /// learn about where in time a `SystemTime` lies.
@@ -509,5 +516,12 @@ impl fmt::Debug for SystemTime {
             .field("secs", &self.t.secs())
             .field("nsecs", &self.t.nsecs())
             .finish()
+    }
+}
+
+impl From<SystemTime> for raw::Timespec {
+    #[inline]
+    fn from(value: SystemTime) -> Self {
+        value.t
     }
 }
