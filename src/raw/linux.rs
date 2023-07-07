@@ -115,8 +115,11 @@ pub struct Timespec {
 
 cfg_if! {
     if #[cfg(any(
-        target_arch = "x86_64",
+        target_arch = "x86_64", // supporting x32 too
         target_arch = "powerpc",
+        target_arch = "arm",
+        target_arch = "mips",
+        target_arch = "x86",
         target_pointer_width = "64"
     ))] {
         mod get_impl {
@@ -133,7 +136,12 @@ cfg_if! {
                 AtomicPtr::new(core::ptr::null_mut());
 
             cfg_if::cfg_if! {
-                if #[cfg(target_arch = "powerpc")] {
+                if #[cfg(any(
+                    target_arch = "powerpc",
+                    target_arch = "arm",
+                    target_arch = "mips",
+                    target_arch = "x86"
+                ))] {
                     #[inline(always)]
                     fn vdso_clock_gettime(vdso: &linux_syscalls::env::Vdso) -> *const core::ffi::c_void {
                         vdso.clock_gettime64()
