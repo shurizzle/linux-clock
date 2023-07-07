@@ -2,13 +2,7 @@ use cfg_if::cfg_if;
 use linux_syscalls::{syscall, Errno, Sysno};
 
 cfg_if! {
-    if #[cfg(any(
-        target_arch = "x86_64",
-        target_arch = "powerpc64",
-        target_arch = "mips64",
-        target_arch = "s390x",
-        target_arch = "sparc64"
-    ))] {
+    if #[cfg(any(target_arch = "x86_64", target_pointer_width = "64"))] {
         #[allow(non_upper_case_globals)]
         const SYS_clock_gettime: Sysno = Sysno::clock_gettime;
         #[allow(non_upper_case_globals)]
@@ -121,18 +115,9 @@ pub struct Timespec {
 
 cfg_if! {
     if #[cfg(any(
-        target_arch = "arm",
-        target_arch = "aarch64",
-        target_arch = "mips",
-        target_arch = "mips64",
-        target_arch = "powerpc",
-        target_arch = "powerpc64",
-        target_arch = "riscv32",
-        target_arch = "riscv64",
-        target_arch = "s390x",
-        target_arch = "x86",
         target_arch = "x86_64",
-        target_arch = "loongarch64"
+        target_arch = "powerpc",
+        target_pointer_width = "64"
     ))] {
         mod get_impl {
             use core::{
