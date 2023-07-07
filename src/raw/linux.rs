@@ -187,9 +187,14 @@ cfg_if! {
                 unsafe {
                     let mut buf = MaybeUninit::<super::Timespec>::uninit();
                     (*buf.as_mut_ptr()).__padding = 0;
-                    if let Some(inner) = clock_gettime_vsyscall() {
-                        Errno::from_ret(inner(clockid, buf.as_mut_ptr()))
-                    } else {
+                    'res: {
+                        if let Some(inner) = clock_gettime_vsyscall() {
+                            match Errno::from_ret(inner(clockid, buf.as_mut_ptr())) {
+                                Err(Errno::ENOSYS) => (),
+                                other => break 'res other,
+                            }
+                        }
+
                         syscall!(super::SYS_clock_gettime, clockid, buf.as_mut_ptr())
                     }
                     .map(|_| buf.assume_init())
