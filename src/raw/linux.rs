@@ -15,7 +15,7 @@ cfg_if! {
     }
 }
 
-#[repr(i32)]
+#[repr(u32)]
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub enum ClockId {
     /// A settable system-wide clock that measures real (i.e., wall-
@@ -24,7 +24,7 @@ pub enum ClockId {
     /// the system time (e.g., if the system administrator manually
     /// changes the clock), and by the incremental adjustments performed
     /// by adjtime(3) and NTP.
-    Realtime = 0,
+    Realtime = linux_raw_sys::general::CLOCK_REALTIME,
 
     /// A nonsettable system-wide clock that represents monotonic time
     /// since—as described by POSIX—"some unspecified point in the
@@ -40,39 +40,39 @@ pub enum ClockId {
     /// consecutive calls will not go backwards, but successive calls
     /// may—depending on the architecture—return identical (not-
     /// increased) time values.
-    Monotonic = 1,
+    Monotonic = linux_raw_sys::general::CLOCK_MONOTONIC,
 
     /// (since Linux 2.6.12)
     /// This is a clock that measures CPU time consumed by this process
     /// (i.e., CPU time consumed by all threads in the process).  On
     /// Linux, this clock is not settable.
-    ProcessCputimeId = 2,
+    ProcessCputimeId = linux_raw_sys::general::CLOCK_PROCESS_CPUTIME_ID,
 
     /// (since Linux 2.6.12)
     /// This is a clock that measures CPU time consumed by this thread.
     /// On Linux, this clock is not settable.
-    ThreadCputimeId = 3,
+    ThreadCputimeId = linux_raw_sys::general::CLOCK_THREAD_CPUTIME_ID,
 
     /// (since Linux 2.6.28; Linux-specific)
     /// Similar to CLOCK_MONOTONIC, but provides access to a raw
     /// hardware-based time that is not subject to NTP adjustments or
     /// the incremental adjustments performed by adjtime(3).  This clock
     /// does not count time that the system is suspended.
-    MonotonicRaw = 4,
+    MonotonicRaw = linux_raw_sys::general::CLOCK_MONOTONIC_RAW,
 
     /// (since Linux 2.6.32; Linux-specific)
     /// A faster but less precise version of CLOCK_REALTIME.  This clock
     /// is not settable.  Use when you need very fast, but not fine-
     /// grained timestamps.  Requires per-architecture support, and
     /// probably also architecture support for this flag in the vdso(7).
-    RealtimeCoarse = 5,
+    RealtimeCoarse = linux_raw_sys::general::CLOCK_REALTIME_COARSE,
 
     /// (since Linux 2.6.32; Linux-specific)
     /// A faster but less precise version of CLOCK_MONOTONIC.  Use when
     /// you need very fast, but not fine-grained timestamps.  Requires
     /// per-architecture support, and probably also architecture support
     /// for this flag in the vdso(7).
-    MonotonicCoarse = 6,
+    MonotonicCoarse = linux_raw_sys::general::CLOCK_MONOTONIC_COARSE,
 
     /// (since Linux 2.6.39; Linux-specific)
     /// A nonsettable system-wide clock that is identical to
@@ -81,16 +81,16 @@ pub enum ClockId {
     /// aware monotonic clock without having to deal with the
     /// complications of CLOCK_REALTIME, which may have discontinuities
     /// if the time is changed using settimeofday(2) or similar.
-    Boottime = 7,
+    Boottime = linux_raw_sys::general::CLOCK_BOOTTIME,
 
     /// (since Linux 3.0; Linux-specific)
     /// Like CLOCK_REALTIME, but not settable.  See timer_create(2) for
     /// further details.
-    RealtimeAlarm = 8,
+    RealtimeAlarm = linux_raw_sys::general::CLOCK_REALTIME_ALARM,
 
     /// (since Linux 3.0; Linux-specific)
     /// Like CLOCK_BOOTTIME.  See timer_create(2) for further details.
-    BoottimeAlarm = 9,
+    BoottimeAlarm = linux_raw_sys::general::CLOCK_BOOTTIME_ALARM,
 
     /// (since Linux 3.10; Linux-specific)
     /// A nonsettable system-wide clock derived from wall-clock time but
@@ -99,7 +99,7 @@ pub enum ClockId {
     /// seconds as CLOCK_REALTIME does.
     ///
     /// The acronym TAI refers to International Atomic Time.
-    InternationalAtomicTime = 11,
+    InternationalAtomicTime = linux_raw_sys::general::CLOCK_TAI,
 }
 
 #[repr(C)]
