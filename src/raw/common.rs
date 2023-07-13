@@ -14,7 +14,7 @@ pub enum ClockId {
     /// The system's real time (i.e. wall time) clock, expressed as the amount
     /// of time since the Epoch.  This is the same as the value returned by
     /// gettimeofday(2).
-    Realtime = 0,
+    Realtime = libc::CLOCK_REALTIME,
 
     /// Clock that increments monotonically, tracking the time since an
     /// arbitrary point like [`Monotonic`]. However, this clock is
@@ -22,19 +22,19 @@ pub enum ClockId {
     /// to other system time sources.
     ///
     /// [`Monotonic`]: Self::Monotonic
-    MonotonicRaw = 4,
+    MonotonicRaw = libc::CLOCK_MONOTONIC_RAW,
 
     /// Like [`MonotonicRaw`], but reads a value cached by the system at
     /// context switch. This can be read faster, but at a loss of accuracy as
     /// it may return values that are milliseconds old.
     ///
     /// [`MonotonicRaw`]: Self::MonotonicRaw
-    MonotonicRawApprox = 5,
+    MonotonicRawApprox = libc::CLOCK_MONOTONIC_RAW_APPROX,
 
     /// Clock that increments monotonically, tracking the time since an
     /// arbitrary point, and will continue to increment while the system is
     /// asleep.
-    Monotonic = 6,
+    Monotonic = libc::CLOCK_MONOTONIC,
 
     /// Clock that increments monotonically, in the same manner as
     /// [`MonotonicRaw`], but that does not increment while the system is
@@ -43,22 +43,22 @@ pub enum ClockId {
     /// applied.
     ///
     /// [`MonotonicRaw`]: Self::MonotonicRaw
-    UptimeRaw = 8,
+    UptimeRaw = libc::CLOCK_UPTIME_RAW,
 
     // Like [`UptimeRaw`], but reads a value cached by the system at
     // context switch. This can be read faster, but at a loss of accuracy as
     // it may return values that are milliseconds old.
     ///
     /// [`UptimeRaw`]: Self::UptimeRaw
-    UptimeRawApprox = 9,
+    UptimeRawApprox = libc::CLOCK_UPTIME_RAW_APPROX,
 
     /// Clock that tracks the amount of CPU (in user- or kernel-mode) used by
     /// the calling process.
-    ProcessCputimeId = 12,
+    ProcessCputimeId = libc::CLOCK_PROCESS_CPUTIME_ID,
 
     /// Clock that tracks the amount of CPU (in user- or kernel-mode) used by
     /// the calling thread.
-    ThreadCputimeId = 16,
+    ThreadCputimeId = libc::CLOCK_THREAD_CPUTIME_ID,
 }
 
 #[repr(transparent)]
