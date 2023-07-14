@@ -161,7 +161,7 @@ cfg_if! {
                     match CLOCK_GETTIME_VSYSCALL.load(Ordering::Relaxed) {
                         UNINIT => {
                             let ptr =
-                                vdso_clock_gettime(linux_syscalls::env::vdso()) as *mut core::ffi::c_void;
+                                vdso_clock_gettime(linux_syscalls::env::unchecked_vdso()) as *mut core::ffi::c_void;
                             if ptr.is_null() {
                                 CLOCK_GETTIME_VSYSCALL.store(INIT_NULL, Ordering::Relaxed);
                                 None
