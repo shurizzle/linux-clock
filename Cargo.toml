@@ -17,5 +17,5 @@ cfg-if = "1.0.0"
 [target.'cfg(all(unix, not(target_os = "linux")))'.dependencies]
 libc = "0.2.147"
 
-[target.'cfg(any(target_os = "macos", target_os = "ios", target_os = "watchos", target_os = "tvos", target_os = "freebsd"))'.dependencies]
+[target.'cfg(any(target_os = "macos", target_os = "ios", target_os = "watchos", target_os = "tvos", target_os = "freebsd", target_os = "dragonfly"))'.dependencies]
 bsd-errnos = { git = "https://github.com/shurizzle/bsd-errnos" }

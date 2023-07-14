@@ -61,8 +61,9 @@ pub enum ClockId {
     ThreadCputimeId = libc::CLOCK_THREAD_CPUTIME_ID,
 }
 
-#[cfg(target_os = "freebsd")]
-#[repr(i32)]
+#[cfg(any(target_os = "freebsd", target_os = "dragonfly"))]
+#[cfg_attr(target_os = "freebsd", repr(i32))]
+#[cfg_attr(target_os = "dragonfly", repr(u64))]
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub enum ClockId {
     /// Increments as a wall clock should.
@@ -95,7 +96,7 @@ pub enum ClockId {
     ThreadCputimeId = libc::CLOCK_THREAD_CPUTIME_ID,
 }
 
-#[cfg(target_os = "freebsd")]
+#[cfg(any(target_os = "freebsd", target_os = "dragonfly"))]
 #[allow(non_upper_case_globals)]
 impl ClockId {
     /// Alias for [Self::RealtimeFast].
