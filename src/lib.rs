@@ -6,9 +6,10 @@ use core::{fmt, time::Duration};
     target_os = "macos",
     target_os = "ios",
     target_os = "watchos",
-    target_os = "tvos"
+    target_os = "tvos",
+    target_os = "freebsd"
 ))]
-pub use apple_errnos::Errno;
+pub use bsd_errnos::Errno;
 #[cfg(target_os = "linux")]
 pub use linux_syscalls::Errno;
 

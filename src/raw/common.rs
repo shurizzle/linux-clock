@@ -61,6 +61,51 @@ pub enum ClockId {
     ThreadCputimeId = libc::CLOCK_THREAD_CPUTIME_ID,
 }
 
+#[cfg(target_os = "freebsd")]
+#[repr(i32)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
+pub enum ClockId {
+    /// Increments as a wall clock should.
+    Realtime = libc::CLOCK_REALTIME,
+    /// Same as [Self::Realtime] but get the most exact value as possible, at the expense of execution time
+    RealtimePrecise = libc::CLOCK_REALTIME_PRECISE,
+    /// Same as [Self::Realtime] but do not perform a full time counter query, so the accuracy is one timer tick.
+    RealtimeFast = libc::CLOCK_REALTIME_FAST,
+    /// Increments in SI seconds.
+    Monotonic = libc::CLOCK_MONOTONIC,
+    /// Same as [Self::Monotonic] but get the most exact value as possible, at the expense of execution time
+    MonotonicPrecise = libc::CLOCK_MONOTONIC_PRECISE,
+    /// Same as [Self::Monotonic] but do not perform a full time counter query, so the accuracy is one timer tick.
+    MonotonicFast = libc::CLOCK_MONOTONIC_FAST,
+    /// Starts at zero when the kernel boots and increments monotonically in SI seconds while the machine is running.
+    Uptime = libc::CLOCK_UPTIME,
+    /// Same as [Self::Uptime] but get the most exact value as possible, at the expense of execution time
+    UptimePrecise = libc::CLOCK_UPTIME_PRECISE,
+    /// Same as [Self::Uptime] but do not perform a full time counter query, so the accuracy is one timer tick.
+    UptimeFast = libc::CLOCK_UPTIME_FAST,
+    /// Increments only when the CPU is running in user mode on behalf of the calling process.
+    Virtual = libc::CLOCK_VIRTUAL,
+    /// Increments when the CPU is running in user or kernel mode.
+    Prof = libc::CLOCK_PROF,
+    /// Returns the current second without performing a full time counter query, using an in-kernel cached value of the current second.
+    Second = libc::CLOCK_SECOND,
+    /// Returns the execution time of the calling process.
+    ProcessCputimeId = libc::CLOCK_PROCESS_CPUTIME_ID,
+    /// Returns the execution time of the calling thread.
+    ThreadCputimeId = libc::CLOCK_THREAD_CPUTIME_ID,
+}
+
+#[cfg(target_os = "freebsd")]
+#[allow(non_upper_case_globals)]
+impl ClockId {
+    /// Alias for [Self::RealtimeFast].
+    pub const RealtimeCoarse: Self = Self::RealtimeFast;
+    /// Alias for [Self::MonotonicFast].
+    pub const MonotonicCoarse: Self = Self::MonotonicFast;
+    /// Alias for [Self::Uptime].
+    pub const Boottime: Self = Self::Uptime;
+}
+
 #[repr(transparent)]
 #[derive(Clone, Copy)]
 pub struct Timespec(libc::timespec);
