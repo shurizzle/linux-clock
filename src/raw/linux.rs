@@ -180,17 +180,14 @@ cfg_if! {
                 unsafe {
                     let mut buf = MaybeUninit::<super::Timespec>::uninit();
                     (*buf.as_mut_ptr()).__padding = 0;
-                    'res: {
-                        if let Some(inner) = clock_gettime_vsyscall() {
-                            match Errno::from_ret(inner(clockid, buf.as_mut_ptr())) {
-                                Err(Errno::ENOSYS) => (),
-                                other => break 'res other,
-                            }
+                    if let Some(inner) = clock_gettime_vsyscall() {
+                        match Errno::from_ret(inner(clockid, buf.as_mut_ptr())) {
+                            Err(Errno::ENOSYS) => (),
+                            other => return other.map(|_| buf.assume_init()),
                         }
-
-                        syscall!(super::SYS_clock_gettime, clockid, buf.as_mut_ptr())
                     }
-                    .map(|_| buf.assume_init())
+
+                    syscall!(super::SYS_clock_gettime, clockid, buf.as_mut_ptr()).map(|_| buf.assume_init())
                 }
             }
         }
