@@ -131,18 +131,12 @@ jobs:
       with:
         toolchain: stable
         default: true
-    - name: Install 1.40.0 toolchain
+    - name: Install 1.63.0 toolchain
       uses: actions-rs/toolchain@v1
       with:
-        toolchain: 1.40.0
+        toolchain: 1.63.0
         default: false
-      if: ${{ matrix.target != 'loongarch64-unknown-linux-gnu' && matrix.target != 'riscv64gc-unknown-linux-gnu' }}
-    - name: Install 1.42.0 toolchain
-      uses: actions-rs/toolchain@v1
-      with:
-        toolchain: 1.42.0
-        default: false
-      if: ${{ matrix.target == 'riscv64gc-unknown-linux-gnu' }}
+      if: ${{ matrix.target != 'loongarch64-unknown-linux-gnu' }}
     - name: Install nightly toolchain
       uses: actions-rs/toolchain@v1
       with:
@@ -169,24 +163,15 @@ jobs:
       run: |
         if [ "${{ matrix.target }}" != loongarch64-unknown-linux-gnu ]; then
           rustup target add ${{ matrix.target }} --toolchain stable
-          if [ "${{ matrix.target }}" == riscv64gc-unknown-linux-gnu ]; then
-            rustup target add ${{ matrix.target }} --toolchain 1.42.0
-          else
-            rustup target add ${{ matrix.target }} --toolchain 1.40.0
-          fi
+          rustup target add ${{ matrix.target }} --toolchain 1.63.0
         fi
         rustup target add ${{ matrix.target }} --toolchain nightly
 
-    - name: Test ${{ matrix.target }} 1.40.0
+    - name: Test ${{ matrix.target }} 1.63.0
       run: |
         rm -rf Cargo.lock target
-        cross +1.40.0 test --target ${{ matrix.target }}
-      if: ${{ matrix.target != 'loongarch64-unknown-linux-gnu' && matrix.target != 'riscv64gc-unknown-linux-gnu' }}
-    - name: Test ${{ matrix.target }} 1.42.0
-      run: |
-        rm -rf Cargo.lock target
-        cross +1.42.0 test --target ${{ matrix.target }}
-      if: ${{ matrix.target == 'riscv64gc-unknown-linux-gnu' }}
+        cross +1.63.0 test --target ${{ matrix.target }}
+      if: ${{ matrix.target != 'loongarch64-unknown-linux-gnu' }}
     - name: Test ${{ matrix.target }} stable
       run: |
         rm -rf Cargo.lock target
