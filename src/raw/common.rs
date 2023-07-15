@@ -143,6 +143,29 @@ pub enum ClockId {
     ThreadCputimeId = self::sys::CLOCK_THREAD_CPUTIME_ID,
 }
 
+#[cfg(target_os = "openbsd")]
+#[repr(i32)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
+pub enum ClockId {
+    /// The Coordinated Universal Time (UTC) clock. Its absolute value is the time elapsed since Jan 1 1970 00:00:00 UTC (the Epoch). The clock normally advances continuously, though it may jump discontinuously if a process calls settimeofday(2) or clock_settime().
+    Realtime = libc::CLOCK_REALTIME,
+
+    /// The monotonic clock. Its absolute value is meaningless. The clock begins at an undefined positive point and advances continuously.
+    Monotonic = libc::CLOCK_MONOTONIC,
+
+    /// The uptime clock. Its absolute value is the time elapsed since the system booted. The clock begins at zero and advances continuously.
+    Boottime = libc::CLOCK_BOOTTIME,
+
+    /// The runtime clock. Its absolute value is the time elapsed since the system booted less any time the system was suspended. The clock begins at zero and advances while the system is not suspended.
+    Uptime = libc::CLOCK_UPTIME,
+
+    /// The process CPU clock. Its absolute value begins at zero and advances while the calling process is running in user or kernel mode.
+    ProcessCputimeId = libc::CLOCK_PROCESS_CPUTIME_ID,
+
+    /// The thread CPU clock. Its absolute value begins at zero and advances while the calling thread is running in user or kernel mode.
+    ThreadCputimeId = libc::CLOCK_THREAD_CPUTIME_ID,
+}
+
 #[repr(transparent)]
 #[derive(Clone, Copy)]
 pub struct Timespec(libc::timespec);
