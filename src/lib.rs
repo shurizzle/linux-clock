@@ -8,7 +8,8 @@ use core::{fmt, time::Duration};
     target_os = "watchos",
     target_os = "tvos",
     target_os = "freebsd",
-    target_os = "dragonfly"
+    target_os = "dragonfly",
+    target_os = "netbsd"
 ))]
 pub use bsd_errnos::Errno;
 #[cfg(target_os = "linux")]

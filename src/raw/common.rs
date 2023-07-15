@@ -107,6 +107,42 @@ impl ClockId {
     pub const Boottime: Self = Self::Uptime;
 }
 
+#[cfg(target_os = "netbsd")]
+mod sys {
+    #![allow(
+        non_upper_case_globals,
+        non_camel_case_types,
+        non_snake_case,
+        deref_nullptr,
+        dead_code
+    )]
+
+    include!(concat!(env!("OUT_DIR"), "/bindings/time.rs"));
+}
+
+#[cfg(target_os = "netbsd")]
+#[repr(i32)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
+pub enum ClockId {
+    /// Identifies the realtime clock for the system. For this clock, the values specified by clock_settime() and obtained by clock_gettime() represent the amount of time (in seconds and nanoseconds) since 00:00 Universal Coordinated Time, January 1, 1970.
+    Realtime = self::sys::CLOCK_REALTIME,
+
+    /// Identifies a clock that increases at a steady rate (monotonically). This clock is not affected by calls to adjtime(2) and settimeofday(2) and will fail with an EINVAL error if it's the clock specified in a call to clock_settime(). The origin of the clock is unspecified.
+    Monotonic = self::sys::CLOCK_MONOTONIC,
+
+    /// Identifies a clock that increments only when the CPU is running in user mode on behalf of the calling process.
+    Virtual = self::sys::CLOCK_VIRTUAL,
+
+    /// Identifies a clock that increments when the CPU is running in user or kernel mode on behalf of the calling process.
+    Prof = self::sys::CLOCK_PROF,
+
+    /// Identifies a per process clock based on tick values. This clock is not settable.
+    ProcessCputimeId = self::sys::CLOCK_PROCESS_CPUTIME_ID,
+
+    /// Identifies a per thread clock based on tick values. This clock is not settable.
+    ThreadCputimeId = self::sys::CLOCK_THREAD_CPUTIME_ID,
+}
+
 #[repr(transparent)]
 #[derive(Clone, Copy)]
 pub struct Timespec(libc::timespec);
